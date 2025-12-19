@@ -145,7 +145,7 @@ export default function TermsPage() {
             <p className="text-gray-500 mt-2">Essayez d'ajuster votre recherche ou vos filtres</p>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {terms.map((term: any, index: number) => (
               <motion.div
                 key={term.id}
@@ -155,7 +155,7 @@ export default function TermsPage() {
               >
                 <Link href={`/terms/${term.slug}`}>
                   <Card glow="purple" className="h-full cursor-pointer group">
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center justify-between">
                       <h3 className="text-2xl font-semibold text-neon-cyan group-hover:text-neon-magenta transition-colors">
                         {term.title}
                       </h3>
@@ -163,19 +163,10 @@ export default function TermsPage() {
                     </div>
 
                     {term.category && (
-                      <div className="inline-block px-3 py-1 rounded-full glass text-xs text-neon-purple mb-3">
+                      <div className="inline-block px-3 py-1 rounded-full glass text-xs text-neon-purple mt-3">
                         {term.category.name}
                       </div>
                     )}
-
-                    <p className="text-gray-400 line-clamp-3 mb-4">
-                      {term.description_short}
-                    </p>
-
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>Par {term.creator?.name || 'Admin'}</span>
-                      <span>{new Date(term.created_at).toLocaleDateString('fr-FR')}</span>
-                    </div>
                   </Card>
                 </Link>
               </motion.div>

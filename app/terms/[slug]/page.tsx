@@ -30,7 +30,7 @@ export default function TermDetailPage() {
 
       // Fetch user votes for all definitions
       if (localStorage.getItem('auth_token')) {
-        response.data.approvedDefinitions?.forEach(async (def: any) => {
+        response.data.approved_definitions?.forEach(async (def: any) => {
           try {
             const voteRes = await votesAPI.getUserVote(def.id);
             if (voteRes.data.vote) {
@@ -148,7 +148,7 @@ export default function TermDetailPage() {
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold text-neon-cyan">
-              Définitions ({term.approvedDefinitions?.length || 0})
+              Définitions ({term.approved_definitions?.length || 0})
             </h2>
             {isAuthenticated && (
               <Link href={`/definitions/create?term_id=${term.id}`}>
@@ -160,8 +160,8 @@ export default function TermDetailPage() {
           </div>
 
           <div className="space-y-6">
-            {term.approvedDefinitions && term.approvedDefinitions.length > 0 ? (
-              term.approvedDefinitions.map((definition: any, index: number) => (
+            {term.approved_definitions && term.approved_definitions.length > 0 ? (
+              term.approved_definitions.map((definition: any, index: number) => (
                 <DefinitionCard
                   key={definition.id}
                   definition={definition}
