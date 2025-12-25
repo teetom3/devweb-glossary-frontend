@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: 'http://127.0.0.1:8000/api',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -51,6 +51,12 @@ export const categoriesAPI = {
     api.get('/categories'),
   getById: (id: number) =>
     api.get(`/categories/${id}`),
+  create: (data: { name: string; description?: string }) =>
+    api.post('/categories', data),
+  update: (id: number, data: Partial<{ name: string; description: string }>) =>
+    api.put(`/categories/${id}`, data),
+  delete: (id: number) =>
+    api.delete(`/categories/${id}`),
 };
 
 // Terms API
@@ -59,9 +65,11 @@ export const termsAPI = {
     api.get('/terms', { params }),
   getBySlug: (slug: string) =>
     api.get(`/terms/${slug}`),
-  create: (data: { title: string; category_id: number; description_short: string }) =>
+  incrementView: (slug: string, definitionIds: number[]) =>
+    api.post(`/terms/${slug}/view`, { definition_ids: definitionIds }),
+  create: (data: { title: string; category_id: number }) =>
     api.post('/terms', data),
-  update: (id: number, data: Partial<{ title: string; category_id: number; description_short: string; is_approved: boolean }>) =>
+  update: (id: number, data: Partial<{ title: string; category_id: number; is_approved: boolean }>) =>
     api.put(`/terms/${id}`, data),
   delete: (id: number) =>
     api.delete(`/terms/${id}`),

@@ -7,6 +7,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import CodeEditor from '@/components/ui/CodeEditor';
 import { definitionsAPI } from '@/lib/api';
 
 export default function EditDefinitionPage() {
@@ -204,16 +205,13 @@ export default function EditDefinitionPage() {
                     Exemple de Code (Optionnel)
                   </label>
                 </div>
-                <textarea
-                  placeholder="// Ajoutez un exemple de code pour illustrer le concept&#10;const exemple = 'comme ceci';"
+                <CodeEditor
                   value={formData.code_example}
-                  onChange={(e) => setFormData({ ...formData, code_example: e.target.value })}
-                  rows={6}
-                  className="w-full px-4 py-3 rounded-lg bg-background-secondary border-2 border-glass-border text-foreground placeholder:text-gray-500 font-mono text-sm focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_20px_rgba(0,255,255,0.3)] transition-all duration-300"
+                  onChange={(value) => setFormData({ ...formData, code_example: value })}
+                  placeholder="// Ajoutez un exemple de code pour illustrer le concept\nconst exemple = 'comme ceci';"
+                  rows={10}
+                  error={errors.code_example?.[0]}
                 />
-                {errors.code_example && (
-                  <p className="mt-1 text-sm text-neon-pink">{errors.code_example[0]}</p>
-                )}
               </div>
 
               {/* Demo URL (Optional) */}

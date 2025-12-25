@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ThumbsUp, ThumbsDown, Eye, Code, ExternalLink, User as UserIcon } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import CodeBlock from '@/components/ui/CodeBlock';
 import { termsAPI, votesAPI } from '@/lib/api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -22,6 +23,20 @@ export default function TermDetailPage() {
     setIsAuthenticated(!!token);
     fetchTerm();
   }, [slug]);
+
+  useEffect(() => {
+    // Increment views only once per visit using sessionStorage
+    if (term && term.approved_definitions) {
+      const viewKey = `viewed_term_${slug}`;
+      const hasViewed = sessionStorage.getItem(viewKey);
+
+      if (!hasViewed) {
+        const definitionIds = term.approved_definitions.map((def: any) => def.id);
+        termsAPI.incrementView(slug, definitionIds).catch(console.error);
+        sessionStorage.setItem(viewKey, 'true');
+      }
+    }
+  }, [term, slug]);
 
   const fetchTerm = async () => {
     try {
@@ -55,11 +70,10 @@ export default function TermDetailPage() {
     }
 
     try {
-      await votesAPI.vote(definitionId, value);
+      const currentVote = userVotes[definitionId];
 
-      // Update local state
+      // Optimistic update of local state
       setUserVotes((prev) => {
-        const currentVote = prev[definitionId];
         if (currentVote === value) {
           // Remove vote
           const newVotes = { ...prev };
@@ -71,10 +85,59 @@ export default function TermDetailPage() {
         }
       });
 
-      // Refresh term data
-      fetchTerm();
+      // Update score optimistically
+      setTerm((prevTerm: any) => {
+        if (!prevTerm) return prevTerm;
+
+        const updatedDefinitions = prevTerm.approved_definitions.map((def: any) => {
+          if (def.id === definitionId) {
+            let newScore = def.score || 0;
+
+            if (currentVote === value) {
+              // Removing vote
+              newScore -= value;
+            } else if (currentVote) {
+              // Changing vote (remove old, add new)
+              newScore = newScore - currentVote + value;
+            } else {
+              // Adding new vote
+              newScore += value;
+            }
+
+            return { ...def, score: newScore };
+          }
+          return def;
+        });
+
+        // Update best_definition if it's the one being voted on
+        let updatedBestDef = prevTerm.best_definition;
+        if (prevTerm.best_definition?.id === definitionId) {
+          let newScore = prevTerm.best_definition.score || 0;
+
+          if (currentVote === value) {
+            newScore -= value;
+          } else if (currentVote) {
+            newScore = newScore - currentVote + value;
+          } else {
+            newScore += value;
+          }
+
+          updatedBestDef = { ...prevTerm.best_definition, score: newScore };
+        }
+
+        return {
+          ...prevTerm,
+          approved_definitions: updatedDefinitions,
+          best_definition: updatedBestDef,
+        };
+      });
+
+      // Make API call
+      await votesAPI.vote(definitionId, value);
     } catch (error) {
       console.error('Error voting:', error);
+      // Revert on error
+      fetchTerm();
     }
   };
 
@@ -125,18 +188,60 @@ export default function TermDetailPage() {
               {term.title}
             </h1>
 
-            <p className="text-xl text-gray-300 mb-6">
-              {term.description_short}
-            </p>
+            {term.best_definition && (
+              <>
+                {term.best_definition.title && (
+                  <h2 className="text-2xl font-semibold text-neon-magenta mb-4">
+                    {term.best_definition.title}
+                  </h2>
+                )}
 
-            <div className="flex items-center gap-4 text-sm text-gray-400">
-              <div className="flex items-center gap-2">
-                <UserIcon className="w-4 h-4" />
-                <span>Créé par {term.creator?.name || 'Admin'}</span>
-              </div>
-              <span>•</span>
-              <span>{new Date(term.created_at).toLocaleDateString('fr-FR')}</span>
-            </div>
+                <p className="text-xl text-gray-300 mb-6 whitespace-pre-wrap">
+                  {term.best_definition.explanation}
+                </p>
+
+                {term.best_definition.code_example && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Code className="w-5 h-5 text-neon-cyan" />
+                      <span className="text-base font-semibold text-neon-cyan">Exemple de Code</span>
+                    </div>
+                    <CodeBlock code={term.best_definition.code_example} />
+                  </div>
+                )}
+
+                {term.best_definition.demo_url && (
+                  <div className="mb-6">
+                    <a
+                      href={term.best_definition.demo_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-neon-cyan hover:text-neon-magenta transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span>Voir la Démo</span>
+                    </a>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4 text-sm text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="w-4 h-4" />
+                    <span>{term.best_definition.user?.name || 'Anonyme'}</span>
+                  </div>
+                  <span>•</span>
+                  <div className="flex items-center gap-2">
+                    <ThumbsUp className="w-4 h-4 text-neon-green" />
+                    <span>{term.best_definition.score || 0} points</span>
+                  </div>
+                  <span>•</span>
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    <span>{term.best_definition.views_count || 0} vues</span>
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
         </motion.div>
 
@@ -272,11 +377,7 @@ function DefinitionCard({
                   <Code className="w-5 h-5 text-neon-cyan" />
                   <span className="text-base font-semibold text-neon-cyan">Exemple de Code</span>
                 </div>
-                <pre className="bg-[#0f0f1a] border-2 border-neon-cyan/30 p-6 rounded-lg overflow-x-auto shadow-[0_0_30px_rgba(0,255,255,0.15)]">
-                  <code className="text-sm text-gray-100 font-mono leading-relaxed whitespace-pre-wrap break-words">
-                    {definition.code_example}
-                  </code>
-                </pre>
+                <CodeBlock code={definition.code_example} />
               </div>
             )}
 

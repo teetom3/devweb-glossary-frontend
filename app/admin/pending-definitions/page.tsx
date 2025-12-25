@@ -6,6 +6,7 @@ import { CheckCircle, XCircle, Eye, ThumbsUp, ThumbsDown, User, Calendar, BookOp
 import { useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import CodeBlock from '@/components/ui/CodeBlock';
 import { definitionsAPI } from '@/lib/api';
 import Link from 'next/link';
 
@@ -159,11 +160,7 @@ export default function AdminPendingDefinitionsPage() {
                     {def.code_example && (
                       <div>
                         <h4 className="text-sm font-semibold text-neon-cyan mb-2">Exemple de Code</h4>
-                        <pre className="bg-background-secondary border border-glass-border rounded-lg p-4 overflow-x-auto">
-                          <code className="text-sm font-mono text-gray-300">
-                            {def.code_example}
-                          </code>
-                        </pre>
+                        <CodeBlock code={def.code_example} showLineNumbers={true} />
                       </div>
                     )}
 
